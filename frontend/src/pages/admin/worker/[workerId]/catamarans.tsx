@@ -8,17 +8,44 @@ import {
   useDeleteCatamaranMutation,
 } from "../../../../features/catamarans/catamaransApi";
 
+interface Worker {
+  id: number;
+  username: string;
+}
+
 const WorkerCatamaransPage: React.FC = () => {
   const router = useRouter();
   const { workerId } = router.query as { workerId?: string };
 
-  // Превращаем workerId в число или пропускаем запрос
+  // 1) Преобразуем workerId
   const numericWorkerId =
     workerId && !Array.isArray(workerId) && !isNaN(+workerId)
       ? Number(workerId)
       : undefined;
 
-  // 1) GET список катамаранов этого рабочего (админ)
+  // 2) Состояние для имени
+  const [workerName, setWorkerName] = useState<string>("");
+
+  // 3) При монтировании — подгружаем имя через общий endpoint /admin/workers
+  useEffect(() => {
+    if (!numericWorkerId) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("http://localhost:3001/admin/workers", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Не удалось загрузить рабочих");
+        return res.json() as Promise<Worker[]>;
+      })
+      .then((list) => {
+        const me = list.find((w) => w.id === numericWorkerId);
+        if (me) setWorkerName(me.username);
+      })
+      .catch(console.error);
+  }, [numericWorkerId]);
+
+  // 4) RTK Query для катамаранов
   const {
     data: catamarans = [],
     isLoading: loadingList,
@@ -28,75 +55,81 @@ const WorkerCatamaransPage: React.FC = () => {
     skip: numericWorkerId == null,
   });
 
-  // 2) Мутации создания и удаления
   const [createCatamaran, { isLoading: creating }] =
     useCreateCatamaranMutation();
   const [deleteCatamaran, { isLoading: deleting }] =
     useDeleteCatamaranMutation();
 
-  // 3) Локальные стейты формы
   const [name, setName] = useState("");
-  const [notifyOnStart, setNotifyOnStart] = useState(false); // ← новый флаг
+  const [notifyOnStart, setNotifyOnStart] = useState(false);
   const [timerLimitMinutes, setTimerLimitMinutes] = useState<number | "">("");
 
-  // 4) При изменении рабочего — рефетчим
   useEffect(() => {
-    if (numericWorkerId != null) {
-      refetch();
-    }
+    if (numericWorkerId != null) refetch();
   }, [numericWorkerId, refetch]);
 
-  // 5) Создание катамарана
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     if (numericWorkerId == null) return;
-    try {
-      await createCatamaran({
-        workerId: numericWorkerId,
-        name,
-        timerLimitMinutes:
-          timerLimitMinutes === "" ? undefined : timerLimitMinutes,
-        notifyOnStart, // ← передаём флаг
-      }).unwrap();
-
-      // сбрасываем форму
-      setName("");
-      setTimerLimitMinutes("");
-      setNotifyOnStart(false);
-    } catch (err) {
-      console.error("Ошибка создания катамарана:", err);
-    }
+    await createCatamaran({
+      workerId: numericWorkerId,
+      name,
+      timerLimitMinutes:
+        timerLimitMinutes === "" ? undefined : timerLimitMinutes,
+      notifyOnStart,
+    }).unwrap();
+    setName("");
+    setTimerLimitMinutes("");
+    setNotifyOnStart(false);
   };
 
-  // 6) Удаление катамарана
   const handleDelete = async (catId: number) => {
     if (numericWorkerId == null) return;
-    try {
-      await deleteCatamaran({
-        workerId: numericWorkerId,
-        catamaranId: catId,
-      }).unwrap();
-    } catch (err) {
-      console.error("Ошибка удаления катамарана:", err);
-    }
+    await deleteCatamaran({
+      workerId: numericWorkerId,
+      catamaranId: catId,
+    }).unwrap();
   };
 
-  // 7) Рендеринг
   if (!workerId) return <p>Загрузка…</p>;
   if (loadingList) return <p>Загрузка списка…</p>;
   if (listError) return <p>Не удалось загрузить катамараны.</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "1rem" }}>
-      <h1>Катамараны рабочего #{numericWorkerId}</h1>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: "0 auto",
+        padding: "1rem",
+      }}
+    >
+      {/* Показываем имя, если подгрузилось, иначе ID */}
+      <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
+        Катамараны рабочего{" "}
+        <span style={{ color: "#0070f3" }}>
+          {workerName || `#${numericWorkerId}`}
+        </span>
+      </h1>
 
-      <form onSubmit={handleCreate} style={{ marginBottom: "1.5rem" }}>
+      <form
+        onSubmit={handleCreate}
+        style={{
+          marginBottom: "1.5rem",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+        }}
+      >
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Название"
           required
-          style={{ marginRight: 8 }}
+          style={{
+            flex: "1 1 200px",
+            padding: "0.5rem",
+            fontSize: "1rem",
+          }}
         />
         <input
           type="number"
@@ -107,24 +140,42 @@ const WorkerCatamaransPage: React.FC = () => {
             )
           }
           placeholder="Лимит (мин)"
-          style={{ width: 120, marginRight: 8 }}
+          style={{
+            flex: "0 0 120px",
+            padding: "0.5rem",
+            fontSize: "1rem",
+          }}
         />
         <label
           style={{
-            marginRight: 8,
+            flex: "0 0 auto",
             display: "inline-flex",
             alignItems: "center",
+            fontSize: "0.9rem",
           }}
         >
           <input
             type="checkbox"
             checked={notifyOnStart}
             onChange={(e) => setNotifyOnStart(e.target.checked)}
-            style={{ marginRight: 4 }}
+            style={{ marginRight: "0.25rem" }}
           />
           Уведомлять при старте
         </label>
-        <button type="submit" disabled={creating}>
+        <button
+          type="submit"
+          disabled={creating}
+          style={{
+            flex: "0 0 120px",
+            padding: "0.5rem",
+            fontSize: "1rem",
+            background: "#0070f3",
+            color: "#fff",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+          }}
+        >
           {creating ? "Создаём…" : "Создать"}
         </button>
       </form>
@@ -137,19 +188,19 @@ const WorkerCatamaransPage: React.FC = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "0.5rem 0",
+              padding: "0.75rem",
               borderBottom: "1px solid #ddd",
             }}
           >
             <div>
-              <strong>{c.name}</strong>{" "}
+              <strong style={{ fontSize: "1.1rem" }}>{c.name}</strong>{" "}
               {c.timerLimitMinutes != null && (
                 <span style={{ color: "#555", marginLeft: 8 }}>
                   (лимит: {c.timerLimitMinutes} мин)
                 </span>
               )}
               <span style={{ marginLeft: 12, fontSize: "0.9rem" }}>
-                {c.notifyOnStart ? "🔔 оповещения вкл." : "🔕 оповещения выкл."}
+                {c.notifyOnStart ? "🔔 Оповещения включены" : "🔕 Выключены"}
               </span>
             </div>
             <button
@@ -159,7 +210,7 @@ const WorkerCatamaransPage: React.FC = () => {
                 background: "#f44336",
                 color: "#fff",
                 border: "none",
-                padding: "0.25rem 0.5rem",
+                padding: "0.5rem",
                 borderRadius: 4,
                 cursor: "pointer",
               }}

@@ -9,9 +9,9 @@ interface Worker {
 }
 
 const AdminDashboard: React.FC = () => {
-  const [workerUsername, setWorkerUsername] = useState<string>("");
-  const [workerPassword, setWorkerPassword] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
+  const [workerUsername, setWorkerUsername] = useState("");
+  const [workerPassword, setWorkerPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
@@ -55,7 +55,6 @@ const AdminDashboard: React.FC = () => {
       setMessage("Ошибка: не найден токен авторизации.");
       return;
     }
-
     try {
       const res = await fetch("http://localhost:3001/auth/worker/create", {
         method: "POST",
@@ -105,7 +104,6 @@ const AdminDashboard: React.FC = () => {
       setMessage("Ошибка: не найден токен авторизации.");
       return;
     }
-
     try {
       const res = await fetch(
         `http://localhost:3001/admin/workers/${selectedWorkerId}`,
@@ -131,131 +129,252 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "1rem" }}>
-      {/* Навигация без <a> внутри Link */}
-      <nav style={{ marginBottom: "1.5rem" }}>
-        <Link
-          href="/admin/dashboard"
-          style={{
-            marginRight: 16,
-            textDecoration: selectedWorkerId === null ? "underline" : "none",
-          }}
-        >
-          Рабочие
-        </Link>
-        <Link href="/admin/settings">Настройки времени</Link>
-      </nav>
-
-      <h1>Панель администратора</h1>
-
-      {/* Форма создания рабочего */}
-      <section style={{ marginBottom: "2rem" }}>
-        <h2>Создать рабочего</h2>
-        <form onSubmit={handleCreateWorker}>
-          <div style={{ marginBottom: 8 }}>
-            <input
-              type="text"
-              placeholder="Имя пользователя"
-              value={workerUsername}
-              onChange={(e) => setWorkerUsername(e.target.value)}
-              required
-              style={{ width: "100%", padding: 8 }}
-            />
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <input
-              type="password"
-              placeholder="Пароль"
-              value={workerPassword}
-              onChange={(e) => setWorkerPassword(e.target.value)}
-              required
-              style={{ width: "100%", padding: 8 }}
-            />
-          </div>
+    <div className="container">
+      <nav style={{ marginBottom: "1.5rem", display: "flex", gap: "0.5rem" }}>
+        <Link href="/admin/dashboard" passHref>
           <button
-            type="submit"
             style={{
-              padding: 12,
-              width: "100%",
-              background: "#0070f3",
-              color: "#fff",
+              padding: "0.5rem 1rem",
+              background: selectedWorkerId === null ? "#0070f3" : "#eee",
+              color: selectedWorkerId === null ? "#fff" : "#333",
               border: "none",
               borderRadius: 4,
+              cursor: "pointer",
             }}
           >
+            Рабочие
+          </button>
+        </Link>
+        <Link href="/admin/settings" passHref>
+          <button
+            style={{
+              padding: "0.5rem 1rem",
+              background: selectedWorkerId !== null ? "#0070f3" : "#eee",
+              color: selectedWorkerId !== null ? "#fff" : "#333",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
+          >
+            Настройки времени
+          </button>
+        </Link>
+      </nav>
+
+      <h1 className="page-title">Панель администратора</h1>
+
+      <section className="section">
+        <h2 className="section-title">Создать рабочего</h2>
+        <form className="form" onSubmit={handleCreateWorker}>
+          <input
+            className="input"
+            type="text"
+            placeholder="Имя пользователя"
+            value={workerUsername}
+            onChange={(e) => setWorkerUsername(e.target.value)}
+            required
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Пароль"
+            value={workerPassword}
+            onChange={(e) => setWorkerPassword(e.target.value)}
+            required
+          />
+          <button type="submit" className="btn btn-primary">
             Создать
           </button>
         </form>
       </section>
 
-      {message && (
-        <p style={{ color: "red", marginBottom: "1rem" }}>{message}</p>
-      )}
+      {message && <p className="message">{message}</p>}
 
-      {/* Список рабочих */}
-      <section>
-        <h2>Список рабочих</h2>
+      <section className="section">
+        <h2 className="section-title">Список рабочих</h2>
         {workers.length === 0 ? (
           <p>Нет созданных рабочих.</p>
         ) : (
-          <ul style={{ listStyle: "none", padding: 0 }}>
+          <ul className="list">
             {workers.map((w) => (
               <li
                 key={w.id}
+                className={
+                  "list-item" + (selectedWorkerId === w.id ? " selected" : "")
+                }
                 onClick={() => handleSelectWorker(w.id)}
-                style={{
-                  padding: 8,
-                  marginBottom: 4,
-                  border:
-                    selectedWorkerId === w.id
-                      ? "2px solid #0070f3"
-                      : "1px solid #ccc",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                }}
               >
-                {w.username} (ID: {w.id})
+                <span style={{ fontSize: "1.25rem", fontWeight: 500 }}>
+                  {w.username}
+                </span>{" "}
               </li>
             ))}
           </ul>
         )}
-        <div style={{ marginTop: "1rem", display: "flex", gap: 8 }}>
-          <button
-            onClick={handleManageCatamarans}
-            style={{ flex: 1, padding: 12 }}
-          >
-            Управлять катамаранами
+
+        <div className="buttons-row">
+          <button onClick={handleManageCatamarans} className="btn">
+            Катамараны
           </button>
-          <button
-            onClick={handleDeleteWorker}
-            style={{
-              flex: 1,
-              padding: 12,
-              background: "#f44336",
-              color: "#fff",
-              border: "none",
-              borderRadius: 4,
-            }}
-          >
-            Удалить рабочего
+          <button onClick={handleDeleteWorker} className="btn btn-danger">
+            Удалить
           </button>
           <Link href={`/admin/worker/${selectedWorkerId}/report`}>
-            <button
-              disabled={selectedWorkerId === null}
-              style={{
-                flex: 1,
-                padding: 12,
-                background: "#4caf50",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-              }}
-            >
+            <button className="btn btn-report" disabled={!selectedWorkerId}>
               Отчёт
             </button>
           </Link>
         </div>
       </section>
+
+      <style jsx>{`
+        /* === Базовые стили для планшетов (≥600px) === */
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem;
+        }
+        .nav {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 2rem;
+        }
+        .nav a {
+          text-decoration: none;
+          color: #555;
+          font-size: 1.1rem;
+        }
+        .nav a.active {
+          text-decoration: underline;
+          color: #000;
+        }
+        .page-title {
+          font-size: 2rem;
+          margin-bottom: 1.5rem;
+        }
+        .section {
+          margin-bottom: 2rem;
+        }
+        .section-title {
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
+        .form {
+          display: flex;
+          flex-direction: column;
+        }
+        .input {
+          font-size: 1.1rem;
+          padding: 0.75rem;
+          margin-bottom: 1rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
+        .buttons-row {
+          display: flex;
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+        .btn {
+          flex: 1;
+          padding: 0.75rem;
+          font-size: 1.1rem;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          background: #e0e0e0;
+          color: #000;
+        }
+        .btn:hover:not(:disabled) {
+          background: #d5d5d5;
+        }
+        .btn-primary {
+          background: #0070f3;
+          color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+          background: #005bb5;
+        }
+        .btn-danger {
+          background: #f44336;
+          color: #fff;
+        }
+        .btn-danger:hover:not(:disabled) {
+          background: #d32f2f;
+        }
+        .btn-report {
+          background: #4caf50;
+          color: #fff;
+        }
+        .btn-report:hover:not(:disabled) {
+          background: #388e3c;
+        }
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .list {
+          list-style: none;
+          padding: 0;
+        }
+        .list-item {
+          padding: 0.75rem;
+          margin-bottom: 0.5rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .list-item.selected {
+          border-color: #0070f3;
+          background: #e6f0ff;
+        }
+        .message {
+          color: #d32f2f;
+          font-size: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        /* === Телефоны (max-width:600px) === */
+        @media (max-width: 600px) {
+          .container {
+            padding: 1rem;
+          }
+          .nav {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .nav a {
+            font-size: 1rem;
+          }
+          .page-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+          }
+          .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+          }
+          .input {
+            font-size: 1rem;
+            padding: 0.5rem;
+            margin-bottom: 0.75rem;
+          }
+          .btn {
+            font-size: 1rem;
+            padding: 0.5rem;
+          }
+          .buttons-row {
+            flex-direction: column;
+          }
+          .buttons-row .btn {
+            width: 100%;
+          }
+          .list-item {
+            font-size: 1rem;
+            padding: 0.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

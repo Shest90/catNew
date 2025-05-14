@@ -35,7 +35,7 @@ interface TimerProps {
   catamaranId: number;
   limitMinutes?: number | null;
   count: number;
-  onReset?: () => void; // ← добавлен новый проп для сброса счётчика
+  onReset?: () => void;
 }
 
 const Timer: React.FC<TimerProps> = ({
@@ -43,7 +43,7 @@ const Timer: React.FC<TimerProps> = ({
   catamaranId,
   limitMinutes,
   count,
-  onReset, // ← включён в деструктуризацию
+  onReset,
 }) => {
   const { timers, startTimer, pauseTimer, resetTimer } = useTimersStore();
   const [startRental] = useStartRentalMutation();
@@ -54,6 +54,12 @@ const Timer: React.FC<TimerProps> = ({
   const [commentText, setCommentText] = useState("");
 
   const [rentalId, setRentalId] = useState<number | null>(null);
+
+  // Восстанавливаем rentalId из localStorage при монтировании
+  useEffect(() => {
+    const saved = localStorage.getItem(`rental_${id}`);
+    if (saved) setRentalId(Number(saved));
+  }, [id]);
 
   // Форс-обновление каждую секунду
   const [, forceUpdate] = useState(0);
@@ -69,7 +75,6 @@ const Timer: React.FC<TimerProps> = ({
   const { elapsed = 0, lastStart = null } = timers[id] ?? {};
   const extra = lastStart ? Math.floor((Date.now() - lastStart) / 1000) : 0;
   const total = elapsed + extra;
-
   const isRunning = lastStart != null;
   const over = limitMinutes != null && total / 60 > limitMinutes;
 
@@ -82,7 +87,7 @@ const Timer: React.FC<TimerProps> = ({
       .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Запуск таймера и начала проката
+  // Запуск таймера и регистрация проката
   const handleStart = async () => {
     if (!isRunning) {
       startTimer(id);
@@ -90,6 +95,7 @@ const Timer: React.FC<TimerProps> = ({
         try {
           const res = await startRental({ catamaranId, count }).unwrap();
           setRentalId(res.id);
+          localStorage.setItem(`rental_${id}`, res.id.toString());
         } catch (e) {
           console.error("Не удалось запустить прокат:", e);
         }
@@ -97,13 +103,11 @@ const Timer: React.FC<TimerProps> = ({
     }
   };
 
-  // Остановка или сброс
+  // Стоп или сброс
   const handleStopReset = async () => {
     if (isRunning) {
-      // пауза
       pauseTimer(id);
     } else if (total > 0) {
-      // завершение проката на сервере
       if (rentalId != null) {
         const durationMinutes = Math.round(total / 60);
         try {
@@ -113,25 +117,24 @@ const Timer: React.FC<TimerProps> = ({
             durationMinutes,
             count,
           }).unwrap();
+          localStorage.removeItem(`rental_${id}`);
         } catch (e) {
           console.error("Не удалось завершить прокат:", e);
         }
         setRentalId(null);
       }
-      // локальный сброс таймера
       resetTimer(id);
-      // колбэк для сброса счётчика
       onReset?.();
     }
   };
 
-  // Открытие модального окна комментария
+  // Открыть модалку для комментария
   const openCommentModal = () => {
     if (isRunning) pauseTimer(id);
     setShowModal(true);
   };
 
-  // Отправка комментария и сброс
+  // Отправить комментарий + сброс
   const handleCommentSubmit = async () => {
     if (!commentText.trim() || rentalId == null) return;
     try {
@@ -150,35 +153,71 @@ const Timer: React.FC<TimerProps> = ({
 
   return (
     <div>
+      {/* Отображение времени */}
       <div
         style={{
           fontSize: "1.5rem",
-          color: over ? "red" : "inherit",
+          color: over ? "#ff8b94" : "#333", // если over — пастельный красный, иначе тёмный
           marginBottom: "0.5rem",
         }}
       >
         {formatTime(total)}
       </div>
+
+      {/* Кнопки управления */}
       <div>
-        <button onClick={handleStart} disabled={isRunning}>
+        {/* Start — пастельный зелёный */}
+        <button
+          onClick={handleStart}
+          disabled={isRunning}
+          style={{
+            background: "#a8e6cf",
+            color: "#333",
+            padding: "0.5rem 1rem",
+            border: "1px solid #a8e6cf",
+            borderRadius: 4,
+            cursor: isRunning ? "not-allowed" : "pointer",
+          }}
+        >
           Start
         </button>
+
+        {/* Stop / Reset — пастельный жёлтый или красный */}
         <button
           onClick={handleStopReset}
           disabled={total === 0}
-          style={{ marginLeft: 8 }}
+          style={{
+            marginLeft: 8,
+            background: isRunning ? "#ffd3b6" : "#ff8b94",
+            color: "#333",
+            padding: "0.5rem 1rem",
+            border: `1px solid ${isRunning ? "#ffd3b6" : "#ff8b94"}`,
+            borderRadius: 4,
+            cursor: total === 0 ? "not-allowed" : "pointer",
+          }}
         >
           {isRunning ? "Stop" : "Reset"}
         </button>
+
+        {/* Comment — пастельный лаванда (или другой пастельный тон) */}
         <button
           onClick={openCommentModal}
           disabled={total === 0}
-          style={{ marginLeft: 8 }}
+          style={{
+            marginLeft: 8,
+            background: "#dcedc1",
+            color: "#333",
+            padding: "0.5rem 1rem",
+            border: "1px solid #dcedc1",
+            borderRadius: 4,
+            cursor: total === 0 ? "not-allowed" : "pointer",
+          }}
         >
           Comment
         </button>
       </div>
 
+      {/* Модальное окно комментария */}
       {showModal && (
         <div style={modalOverlayStyle}>
           <div style={modalStyle}>
@@ -193,12 +232,26 @@ const Timer: React.FC<TimerProps> = ({
               <button
                 onClick={handleCommentSubmit}
                 disabled={!commentText.trim()}
+                style={{
+                  background: "#a8e6cf",
+                  color: "#333",
+                  padding: "0.5rem 1rem",
+                  border: "1px solid #a8e6cf",
+                  borderRadius: 4,
+                  marginRight: 8,
+                }}
               >
                 Отправить и Reset
               </button>
               <button
                 onClick={() => setShowModal(false)}
-                style={{ marginLeft: 8 }}
+                style={{
+                  background: "#ffd3b6",
+                  color: "#333",
+                  padding: "0.5rem 1rem",
+                  border: "1px solid #ffd3b6",
+                  borderRadius: 4,
+                }}
               >
                 Отмена
               </button>

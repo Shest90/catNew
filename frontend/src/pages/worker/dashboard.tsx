@@ -37,7 +37,7 @@ export default function WorkerDashboard() {
     localStorage.setItem("mode", mode);
   }, [mode]);
 
-  // 4) Состояние счётчиков (множителей) для каждого катамарана
+  // 4) Состояние счётчиков (множителей)
   const [counts, setCounts] = useState<Record<number, number>>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -46,7 +46,6 @@ export default function WorkerDashboard() {
       return {};
     }
   });
-  // Инициализируем недостающие счётчики единицей
   useEffect(() => {
     if (catamarans.length > 0) {
       setCounts((prev) => {
@@ -58,12 +57,10 @@ export default function WorkerDashboard() {
       });
     }
   }, [catamarans]);
-  // Сохраняем в localStorage при изменении
   useEffect(() => {
     localStorage.setItem("catCounts", JSON.stringify(counts));
   }, [counts]);
 
-  // Ф-ции для изменения и сброса счётчика
   const changeCount = (id: number, delta: number) => {
     setCounts((prev) => ({
       ...prev,
@@ -80,89 +77,150 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div style={{ position: "relative", padding: "1rem" }}>
-      {/* Переключатель режима и показ лимитов */}
-      <div style={{ position: "absolute", top: 16, right: 16 }}>
+    <div className="page">
+      {/* Переключатель режима */}
+      <div className="mode-switch">
         <button
           onClick={() => setMode("weekday")}
-          style={{
-            marginRight: 8,
-            background: mode === "weekday" ? "#0070f3" : "#eee",
-            color: mode === "weekday" ? "#fff" : "#333",
-          }}
+          className={mode === "weekday" ? "active" : ""}
         >
           Будни: {settings.weekdayLimit} мин
         </button>
         <button
           onClick={() => setMode("weekend")}
-          style={{
-            background: mode === "weekend" ? "#0070f3" : "#eee",
-            color: mode === "weekend" ? "#fff" : "#333",
-          }}
+          className={mode === "weekend" ? "active" : ""}
         >
           Выходные: {settings.weekendLimit} мин
         </button>
       </div>
 
-      <h1>Мои катамараны</h1>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <ul className="cat-list">
         {catamarans.map((c) => {
-          // 6) Вычисляем базовый лимит и итоговый
           const base =
             c.timerLimitMinutes != null
               ? c.timerLimitMinutes
               : mode === "weekday"
               ? settings.weekdayLimit
               : settings.weekendLimit;
-
           const count = counts[c.id] || 1;
-          const totalLimit = base * count; // ← Тут объявляем totalLimit
+          const totalLimit = base * count;
 
           return (
-            <li
-              key={c.id}
-              style={{
-                marginBottom: "1.5rem",
-                padding: "1rem",
-                border: "1px solid #ccc",
-                borderRadius: 4,
-              }}
-            >
-              <h2 style={{ margin: 0 }}>{c.name}</h2>
-
-              {/* Контроллы множителя */}
-              <div
-                style={{
-                  margin: "0.5rem 0",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
+            <li key={c.id} className="cat-card">
+              <h2 className="cat-name">{c.name}</h2>
+              <div className="multiplier">
                 <button
                   onClick={() => changeCount(c.id, -1)}
                   disabled={count <= 1}
                 >
                   −
                 </button>
-                <span style={{ margin: "0 0.75rem" }}>{count}</span>
+                <span>{count}</span>
                 <button onClick={() => changeCount(c.id, +1)}>+</button>
-                <span style={{ marginLeft: "1rem", color: "#555" }}>
-                  лимит: {totalLimit} мин
-                </span>
+                <span className="limit">лимит: {totalLimit} мин</span>
               </div>
-
-              {/* Таймер */}
               <Timer
                 id={`cat_${c.id}`}
                 catamaranId={c.id}
                 limitMinutes={totalLimit}
-                count={count} // ← Передаём count
-                onReset={() => resetCount(c.id)} // ← Передаём resetCount
+                count={count}
+                onReset={() => resetCount(c.id)}
               />
             </li>
           );
         })}
       </ul>
+
+      <style jsx>{`
+        .page {
+          padding: 1rem;
+        }
+        .mode-switch {
+          position: sticky;
+          top: 0;
+          background: #fff;
+          padding: 0.5rem 0;
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.5rem;
+          z-index: 10;
+        }
+        .mode-switch button {
+          padding: 0.4rem 0.8rem;
+          border: none;
+          border-radius: 4px;
+          background: #eee;
+          cursor: pointer;
+          font-size: 0.85rem;
+        }
+        .mode-switch button.active {
+          background: #0070f3;
+          color: #fff;
+        }
+        .cat-list {
+          display: grid;
+          gap: 0.5rem;
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .cat-card {
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+        }
+        .cat-name {
+          margin: 0;
+          font-size: 1rem;
+          text-align: center;
+        }
+        .multiplier {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          flex-wrap: wrap;
+        }
+        .multiplier button {
+          width: 1.5rem;
+          height: 1.5rem;
+          border: none;
+          border-radius: 4px;
+          background: #0070f3;
+          color: #fff;
+          font-size: 1rem;
+          line-height: 1;
+          cursor: pointer;
+        }
+        .multiplier span {
+          font-size: 0.9rem;
+        }
+        .limit {
+          margin-left: auto;
+          color: #555;
+          font-size: 0.85rem;
+        }
+
+        /* Планшеты (ширина ≤ 1024px) — 3 карточки */
+        @media (max-width: 1024px) {
+          .cat-list {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        /* Телефоны (ширина ≤ 600px) — 2 карточки */
+        @media (max-width: 600px) {
+          .cat-list {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        /* Очень узкие экраны (ширина ≤ 400px) — 1 карточка */
+        @media (max-width: 400px) {
+          .cat-list {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -32,16 +32,24 @@ export default function AdminSettingsPage() {
   // RTK Query для PATCH
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation();
 
-  // Локальные поля формы
-  const [weekdayLimit, setWeekdayLimit] = useState(0);
-  const [weekendLimit, setWeekendLimit] = useState(0);
+  // Локальные поля формы как строки, по умолчанию пустые
+  const [weekdayLimit, setWeekdayLimit] = useState<string>("");
+  const [weekendLimit, setWeekendLimit] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
 
-  // Когда настройки пришли — инициализируем поля
+  // Когда настройки пришли — инициализируем поля строковыми значениями
   useEffect(() => {
     if (settings) {
-      setWeekdayLimit(settings.weekdayLimit);
-      setWeekendLimit(settings.weekendLimit);
+      setWeekdayLimit(
+        settings.weekdayLimit && settings.weekdayLimit > 0
+          ? settings.weekdayLimit.toString()
+          : ""
+      );
+      setWeekendLimit(
+        settings.weekendLimit && settings.weekendLimit > 0
+          ? settings.weekendLimit.toString()
+          : ""
+      );
     }
   }, [settings]);
 
@@ -49,61 +57,132 @@ export default function AdminSettingsPage() {
   const handleSave = async () => {
     setMessage(null);
     try {
-      await updateSettings({ weekdayLimit, weekendLimit }).unwrap();
+      // парсим в числа и отправляем
+      await updateSettings({
+        weekdayLimit: parseInt(weekdayLimit, 10) || 0,
+        weekendLimit: parseInt(weekendLimit, 10) || 0,
+      }).unwrap();
       setMessage("Сохранено успешно!");
     } catch {
       setMessage("Ошибка при сохранении настроек.");
     }
   };
 
-  // Loading
-  if (isLoadingSettings) {
-    return <p>Загрузка настроек…</p>;
-  }
+  if (isLoadingSettings) return <p className="info">Загрузка настроек…</p>;
+  if (isErrorSettings)
+    return <p className="info">Не удалось загрузить настройки.</p>;
 
-  // Real error
-  if (isErrorSettings) {
-    return <p>Не удалось загрузить настройки.</p>;
-  }
-
-  // settings гарантированно не undefined
   return (
-    <div style={{ padding: "2rem", maxWidth: 400, margin: "0 auto" }}>
+    <div className="container">
       <h1>Глобальные лимиты проката</h1>
 
-      {message && <p>{message}</p>}
+      {message && <p className="message">{message}</p>}
 
-      <div style={{ marginBottom: "1rem" }}>
+      <div className="field">
         <label>
           Лимит будней (минут):
           <input
             type="number"
+            placeholder="Введите лимит"
             value={weekdayLimit}
-            onChange={(e) => setWeekdayLimit(+e.target.value)}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            onChange={(e) => setWeekdayLimit(e.target.value)}
           />
         </label>
       </div>
 
-      <div style={{ marginBottom: "1rem" }}>
+      <div className="field">
         <label>
           Лимит выходных (минут):
           <input
             type="number"
+            placeholder="Введите лимит"
             value={weekendLimit}
-            onChange={(e) => setWeekendLimit(+e.target.value)}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            onChange={(e) => setWeekendLimit(e.target.value)}
           />
         </label>
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={isSaving}
-        style={{ padding: "0.5rem 1rem" }}
-      >
+      <button onClick={handleSave} disabled={isSaving}>
         {isSaving ? "Сохраняем…" : "Сохранить"}
       </button>
+
+      <style jsx>{`
+        .container {
+          padding: 2rem;
+          max-width: 400px;
+          margin: 0 auto;
+        }
+        h1 {
+          text-align: center;
+          margin-bottom: 1.5rem;
+        }
+        .field {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          font-size: 1rem;
+          margin-bottom: 0.25rem;
+        }
+        input {
+          width: 100%;
+          padding: 0.75rem;
+          font-size: 1rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        button {
+          display: block;
+          width: 100%;
+          padding: 0.75rem;
+          font-size: 1rem;
+          background: #0070f3;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .message {
+          color: green;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+        .info {
+          text-align: center;
+          padding: 2rem;
+        }
+        /* Планшеты */
+        @media (min-width: 768px) {
+          .container {
+            max-width: 600px;
+          }
+          input {
+            font-size: 1.1rem;
+          }
+          button {
+            font-size: 1.1rem;
+          }
+        }
+        /* Телефоны */
+        @media (max-width: 480px) {
+          .container {
+            padding: 1rem;
+          }
+          input {
+            padding: 0.5rem;
+            font-size: 0.95rem;
+          }
+          button {
+            padding: 0.5rem;
+            font-size: 0.95rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }

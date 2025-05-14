@@ -14,11 +14,12 @@ export class Setting {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', default: 0 })
-  weekdayLimit: number;
+  // Убираем default и делаем nullable
+  @Column({ type: 'int', nullable: true })
+  weekdayLimit: number | null;
 
-  @Column({ type: 'int', default: 0 })
-  weekendLimit: number;
+  @Column({ type: 'int', nullable: true })
+  weekendLimit: number | null;
 
   // связь «многие-на-один» к админу
   @ManyToOne(() => Admin, (admin) => admin.settings, { onDelete: 'CASCADE' })

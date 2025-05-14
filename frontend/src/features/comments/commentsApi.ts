@@ -11,6 +11,7 @@ export const commentsApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["Comment"],
   endpoints: (builder) => ({
     createComment: builder.mutation<
       Comment,
