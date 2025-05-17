@@ -104,7 +104,7 @@ export const catamaransApi = createApi({
       query: ({ catamaranId, rentalId, durationMinutes, count }) => ({
         url: `worker/catamarans/${catamaranId}/rentals/${rentalId}`,
         method: "PATCH",
-        body: { endTime: new Date().toISOString(), durationMinutes, count },
+        body: { durationMinutes, count },
       }),
       invalidatesTags: (_res, _err, { catamaranId }) => [
         { type: "Rental", id: catamaranId },

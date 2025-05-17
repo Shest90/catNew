@@ -60,7 +60,7 @@ export class RentalsService {
   async finishRental(id: number, dto: FinishRentalDto): Promise<Rental> {
     const rental = await this.repo.findOne({ where: { id } });
     if (!rental) throw new NotFoundException('Rental not found');
-    rental.endTime = new Date(dto.endTime);
+    rental.endTime = new Date();
     rental.durationMinutes = dto.durationMinutes;
     rental.count = dto.count;
     return this.repo.save(rental);

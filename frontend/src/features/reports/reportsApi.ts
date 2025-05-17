@@ -1,6 +1,20 @@
 // frontend/src/features/reports/reportsApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { ReportResponse } from "../../types/report";
+
+export interface ReportItem {
+  catamaranName: string;
+  startAt: string;
+  endAt: string;
+  durationMinutes: number;
+  count: number;
+  comments: string[];
+  timerLimitMinutes?: number | null;
+}
+
+export interface ReportResponse {
+  items: ReportItem[];
+  totalRentals: number;
+}
 
 export const reportsApi = createApi({
   reducerPath: "reportsApi",

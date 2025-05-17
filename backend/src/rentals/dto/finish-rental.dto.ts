@@ -3,9 +3,6 @@ import { IsDateString, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class FinishRentalDto {
-  @IsDateString()
-  endTime: string;
-
   @IsInt()
   @Type(() => Number)
   durationMinutes: number;

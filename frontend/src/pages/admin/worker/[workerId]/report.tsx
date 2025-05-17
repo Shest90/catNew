@@ -3,40 +3,41 @@ import { useRouter } from "next/router";
 import React, { useState, useEffect, FormEvent } from "react";
 import { skipToken } from "@reduxjs/toolkit/query/react";
 import { useGetWorkerReportQuery } from "../../../../features/reports/reportsApi";
+import { useGetSettingsQuery } from "../../../../features/settings/settingsApi";
 
 export default function WorkerReportPage() {
   const router = useRouter();
   const { workerId } = router.query as { workerId?: string };
 
-  const [workerName, setWorkerName] = useState<string>("");
+  const [workerName, setWorkerName] = useState("");
+
+  // Фильтры
   const [dates, setDates] = useState({ startDate: "", endDate: "" });
   const [filterNames, setFilterNames] = useState("");
 
-  // 1) Подгружаем имя рабочего
+  // Подтягиваем имя рабочего
   useEffect(() => {
     if (!workerId) return;
     const token = localStorage.getItem("token");
     fetch("http://localhost:3001/admin/workers", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Не удалось загрузить список рабочих");
-        return res.json();
-      })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((workers: Array<{ id: number; username: string }>) => {
         const w = workers.find((w) => w.id === Number(workerId));
         if (w) setWorkerName(w.username);
       })
-      .catch((e) => {
-        console.error(e);
-        setWorkerName("");
-      });
+      .catch(() => setWorkerName(""));
   }, [workerId]);
 
-  // 2) Формируем аргумент для отчёта
+  // Глобальные лимиты
+  const {
+    data: settings,
+    isLoading: loadingSettings,
+    isError: errorSettings,
+  } = useGetSettingsQuery();
+
+  // Аргумент для отчёта
   const queryArg =
     workerId && !Array.isArray(workerId) && dates.startDate && dates.endDate
       ? {
@@ -46,14 +47,14 @@ export default function WorkerReportPage() {
           catamarans: filterNames
             .split(",")
             .map((s) => s.trim())
-            .filter((s) => s.length > 0),
+            .filter((s) => s),
         }
       : skipToken;
 
   const {
     data: report,
-    isLoading,
-    isError,
+    isLoading: loadingReport,
+    isError: errorReport,
   } = useGetWorkerReportQuery(queryArg);
 
   const handleSubmit = (e: FormEvent) => {
@@ -61,14 +62,18 @@ export default function WorkerReportPage() {
   };
 
   if (!workerId) return <p>Нет workerId в URL</p>;
+  if (loadingSettings || !settings)
+    return <p className="info">Загрузка лимитов…</p>;
+  if (errorSettings)
+    return <p className="info">Не удалось загрузить лимиты.</p>;
 
   return (
     <div className="container">
-      <h1>Отчёт по работнику {workerName ? workerName : `#${workerId}`}</h1>
+      <h1>Отчёт по работнику {workerName || `#${workerId}`}</h1>
 
       <form onSubmit={handleSubmit} className="filter-form">
         <label>
-          С{" "}
+          С
           <input
             type="date"
             value={dates.startDate}
@@ -79,7 +84,7 @@ export default function WorkerReportPage() {
           />
         </label>
         <label>
-          По{" "}
+          По
           <input
             type="date"
             value={dates.endDate}
@@ -90,7 +95,7 @@ export default function WorkerReportPage() {
           />
         </label>
         <label>
-          Фильтр (имена через запятую){" "}
+          Фильтр (имена через запятую)
           <input
             type="text"
             value={filterNames}
@@ -100,8 +105,8 @@ export default function WorkerReportPage() {
         <button type="submit">Сформировать</button>
       </form>
 
-      {isLoading && <p className="info">Загрузка отчёта…</p>}
-      {isError && <p className="info">Ошибка при загрузке отчёта.</p>}
+      {loadingReport && <p className="info">Загрузка отчёта…</p>}
+      {errorReport && <p className="info">Ошибка при загрузке отчёта.</p>}
 
       {report && (
         <>
@@ -119,26 +124,46 @@ export default function WorkerReportPage() {
                 </tr>
               </thead>
               <tbody>
-                {report.items.map((it, idx) => (
-                  <tr key={idx}>
-                    <td>{it.catamaranName}</td>
-                    <td>{new Date(it.startAt).toLocaleString()}</td>
-                    <td>{new Date(it.endAt).toLocaleString()}</td>
-                    <td>{it.durationMinutes}</td>
-                    <td>{it.count}</td>
-                    <td>
-                      {it.comments.length > 0 ? (
-                        it.comments.map((txt, i) => (
-                          <div key={i} className="comment">
-                            — {txt}
-                          </div>
-                        ))
-                      ) : (
-                        <span className="empty">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {report.items.map((it, idx) => {
+                  // получаем день недели в UTC, а не локальный
+                  const dayUtc = new Date(it.startAt).getUTCDay();
+                  const globalBase =
+                    dayUtc === 0 || dayUtc === 6
+                      ? settings.weekendLimit
+                      : settings.weekdayLimit;
+                  // если у катамарана есть свой лимит — используем его, иначе глобальный
+                  const baseLimit = it.timerLimitMinutes ?? globalBase;
+                  const threshold = baseLimit * it.count;
+                  const over = it.durationMinutes > threshold;
+
+                  return (
+                    <tr key={idx}>
+                      <td>{it.catamaranName}</td>
+                      <td>{new Date(it.startAt).toLocaleString()}</td>
+                      <td>{new Date(it.endAt).toLocaleString()}</td>
+                      <td
+                        style={{
+                          color: over ? "red" : "green",
+                          fontWeight: over ? "bold" : "normal",
+                        }}
+                      >
+                        {it.durationMinutes}
+                      </td>
+                      <td>{it.count}</td>
+                      <td>
+                        {it.comments.length > 0 ? (
+                          it.comments.map((txt, i) => (
+                            <div key={i} className="comment">
+                              {txt}
+                            </div>
+                          ))
+                        ) : (
+                          <span className="empty">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,16 +1,6 @@
-// src/report/dto/report-response.dto.ts
+// backend/src/report/dto/report-response.dto.ts
+import { ReportItemDto } from './report-item.dto';
 
-// экпортируем Item
-export class ReportItemDto {
-  catamaranName: string;
-  startAt: Date;
-  endAt: Date;
-  durationMinutes: number;
-  count: number;
-  comments: string[];
-}
-
-// и сам ответ
 export class ReportResponseDto {
   items: ReportItemDto[];
   totalRentals: number;

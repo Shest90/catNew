@@ -1,8 +1,11 @@
 // backend/src/report/dto/report-item.dto.ts
 export class ReportItemDto {
   catamaranName: string;
-  startTime: Date;
-  endTime: Date;
+  startAt: Date;
+  endAt: Date;
   durationMinutes: number;
   count: number;
+  comments: string[];
+  // ← добавили поле индивидуального лимита
+  timerLimitMinutes?: number | null;
 }
