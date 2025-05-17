@@ -173,8 +173,9 @@ export default function WorkerDashboard() {
         }
         .cat-name {
           margin: 0;
-          font-size: 1rem;
+          font-size: 1.5rem;
           text-align: center;
+          font-weight: 500;
         }
         .multiplier {
           display: flex;

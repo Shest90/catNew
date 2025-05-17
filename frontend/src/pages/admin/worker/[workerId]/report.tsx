@@ -1,6 +1,6 @@
 // frontend/src/pages/admin/worker/[workerId]/report.tsx
 import { useRouter } from "next/router";
-import React, { useState, useEffect, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent, useMemo } from "react";
 import { skipToken } from "@reduxjs/toolkit/query/react";
 import { useGetWorkerReportQuery } from "../../../../features/reports/reportsApi";
 import { useGetSettingsQuery } from "../../../../features/settings/settingsApi";
@@ -44,10 +44,6 @@ export default function WorkerReportPage() {
           workerId: Number(workerId),
           startDate: dates.startDate,
           endDate: dates.endDate,
-          catamarans: filterNames
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s),
         }
       : skipToken;
 
@@ -56,6 +52,24 @@ export default function WorkerReportPage() {
     isLoading: loadingReport,
     isError: errorReport,
   } = useGetWorkerReportQuery(queryArg);
+
+  // Фильтрация катамаранов
+  const filteredItems = useMemo(() => {
+    if (!report) return [];
+
+    return report.items.filter((item) => {
+      if (!filterNames) return true;
+
+      const filters = filterNames
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter((s) => s);
+
+      return filters.some((filter) =>
+        item.catamaranName.toLowerCase().startsWith(filter)
+      );
+    });
+  }, [report, filterNames]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -95,11 +109,12 @@ export default function WorkerReportPage() {
           />
         </label>
         <label>
-          Фильтр (имена через запятую)
+          Фильтр (первые буквы через запятую)
           <input
             type="text"
             value={filterNames}
             onChange={(e) => setFilterNames(e.target.value)}
+            placeholder="эл,жук,рол"
           />
         </label>
         <button type="submit">Сформировать</button>
@@ -110,7 +125,10 @@ export default function WorkerReportPage() {
 
       {report && (
         <>
-          <h2>Итого прокатов: {report.totalRentals}</h2>
+          <h2>
+            Итого прокатов:{" "}
+            {filteredItems.reduce((sum, it) => sum + it.count, 0)}
+          </h2>
           <div className="table-wrapper">
             <table className="report-table">
               <thead>
@@ -124,21 +142,21 @@ export default function WorkerReportPage() {
                 </tr>
               </thead>
               <tbody>
-                {report.items.map((it, idx) => {
-                  // получаем день недели в UTC, а не локальный
+                {filteredItems.map((it, idx) => {
                   const dayUtc = new Date(it.startAt).getUTCDay();
                   const globalBase =
                     dayUtc === 0 || dayUtc === 6
                       ? settings.weekendLimit
                       : settings.weekdayLimit;
-                  // если у катамарана есть свой лимит — используем его, иначе глобальный
                   const baseLimit = it.timerLimitMinutes ?? globalBase;
                   const threshold = baseLimit * it.count;
                   const over = it.durationMinutes > threshold;
 
                   return (
                     <tr key={idx}>
-                      <td>{it.catamaranName}</td>
+                      <td style={{ fontSize: "1.3rem", fontWeight: "500" }}>
+                        {it.catamaranName}
+                      </td>
                       <td>{new Date(it.startAt).toLocaleString()}</td>
                       <td>{new Date(it.endAt).toLocaleString()}</td>
                       <td
@@ -171,6 +189,29 @@ export default function WorkerReportPage() {
       )}
 
       <style jsx>{`
+        .group-header {
+          background-color: #f5f5f5;
+          font-weight: bold;
+        }
+
+        .nested-table {
+          width: 100%;
+          margin-top: 0.5rem;
+          border-collapse: collapse;
+        }
+
+        .nested-table th,
+        .nested-table td {
+          border: 1px solid #ddd;
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+
+        details summary {
+          cursor: pointer;
+          color: #0066cc;
+          font-weight: normal;
+        }
         .container {
           max-width: 800px;
           margin: 0 auto;
