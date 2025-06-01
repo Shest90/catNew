@@ -17,22 +17,22 @@ import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
-    // 1) Подключаем ConfigModule для .env
+    // 1) Подключаем ConfigModule для доступа к переменным из .env
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
 
-    // 2) Настраиваем TypeORM с async-конфигом
+    // 2) Конфигурация TypeORM через переменные окружения
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         type: 'mysql',
         host: cfg.get<string>('DB_HOST', 'localhost'),
-        port: cfg.get<number>('DB_PORT', 3306),
-        username: cfg.get<string>('DB_USERNAME', 'root'),
-        password: cfg.get<string>('DB_PASSWORD', ''),
+        port: Number(cfg.get<string>('DB_PORT', '3306')),
+        username: cfg.get<string>('DB_USERNAME', 'root'), // ключ: DB_USERNAME
+        password: cfg.get<string>('DB_PASSWORD', ''), // ключ: DB_PASSWORD
         database: cfg.get<string>('DB_NAME', 'catamaran_db'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
@@ -40,14 +40,14 @@ import { ReportModule } from './report/report.module';
       }),
     }),
 
-    // 3) Настраиваем почтовый модуль тоже через async
+    // 3) Конфигурация почты через переменные окружения
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         transport: {
           host: cfg.get<string>('SMTP_HOST', 'smtp.mail.ru'),
-          port: cfg.get<number>('SMTP_PORT', 465),
+          port: Number(cfg.get<string>('SMTP_PORT', '465')),
           secure: true,
           auth: {
             user: cfg.get<string>('SMTP_USER'),

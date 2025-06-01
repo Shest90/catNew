@@ -12,6 +12,6 @@ async function bootstrap() {
     }),
   );
   app.enableCors(); // Разрешает запросы с любого источника
-  await app.listen(3001);
+  await app.listen(3001, '0.0.0.0');
 }
 bootstrap();

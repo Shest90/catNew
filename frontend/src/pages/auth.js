@@ -20,7 +20,7 @@ export default function Auth() {
     e.preventDefault();
     setMessage("");
     try {
-      const res = await fetch("http://localhost:3001/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,15 +46,18 @@ export default function Auth() {
     e.preventDefault();
     setMessage("");
     try {
-      const res = await fetch("http://localhost:3001/auth/admin/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: registerUsername,
-          email: registerEmail,
-          password: registerPassword,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/admin/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: registerUsername,
+            email: registerEmail,
+            password: registerPassword,
+          }),
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         setMessage("Регистрация успешна, войдите в систему");

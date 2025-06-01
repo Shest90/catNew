@@ -1,18 +1,18 @@
-// next.config.ts
 import type { NextConfig } from "next";
 import nextPWA from "next-pwa";
-import { join } from "path";
 
 const withPWA = nextPWA({
-  dest: "public", // куда класть sw.js
-  register: true, // автоподключение скрипта регистрации
-  disable: process.env.NODE_ENV === "development", // не пхать PWA в режиме dev
-  // при необходимости можно добавить runtimeCaching и другие опции workbox
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+  buildExcludes: [/middleware-manifest\.json$/], // для Next 13+
 });
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // здесь ваши другие опции Next.js
+  swcMinify: true,
+  output: "standalone", // ✅ это главное для Docker-сборки
 };
 
 export default withPWA(nextConfig);

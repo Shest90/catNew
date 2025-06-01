@@ -1,0 +1,12 @@
+diff --git a/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js b/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
+index ac6eeb1..5d75e79 100644
+--- a/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
++++ b/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
+@@ -120,5 +120,6 @@ function handleRetry(retryAttempts = 9, retryDelay = 3000, dataSourceName = type
+ function getDataSourceName(options) {
+     return options && options.name ? options.name : typeorm_constants_1.DEFAULT_DATA_SOURCE_NAME;
+ }
+-const generateString = () => crypto.randomUUID();
++const { v4: uuidv4 } = require('uuid');
++const generateString = () => uuidv4();
+ exports.generateString = generateString;

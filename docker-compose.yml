@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  backend:
+    image: cr.yandex/crpnlj74unl9emmbgtho/katamaran-backend
+    container_name: katamaran-backend
+    restart: always
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=katamaran_user
+      - DB_PASSWORD=securePassword
+      - DB_NAME=katamarans
+      - JWT_SECRET=supersecretkey
+      - JWT_EXPIRES_IN=3600s
+
+  mysql:
+    image: mysql:8
+    container_name: katamaran-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=katamarans
+      - MYSQL_USER=katamaran_user
+      - MYSQL_PASSWORD=securePassword
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    container_name: katamaran-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    restart: always
+
+volumes:
+  db-data:
