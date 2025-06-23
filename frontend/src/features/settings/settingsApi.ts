@@ -5,7 +5,7 @@ import type { Setting } from "../../types/setting";
 export const settingsApi = createApi({
   reducerPath: "settingsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3001/",
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api`,
     prepareHeaders: (headers) => {
       const t = localStorage.getItem("token");
       if (t) headers.set("Authorization", `Bearer ${t}`);

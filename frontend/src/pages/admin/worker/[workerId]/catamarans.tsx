@@ -31,7 +31,7 @@ const WorkerCatamaransPage: React.FC = () => {
     if (!numericWorkerId) return;
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:3001/admin/workers", {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/workers`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -85,6 +85,10 @@ const WorkerCatamaransPage: React.FC = () => {
 
   const handleDelete = async (catId: number) => {
     if (numericWorkerId == null) return;
+    const confirmed = window.confirm(
+      "Вы уверены, что хотите удалить катамаран?"
+    );
+    if (!confirmed) return;
     await deleteCatamaran({
       workerId: numericWorkerId,
       catamaranId: catId,

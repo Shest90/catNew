@@ -107,18 +107,21 @@ export default function WorkerDashboard() {
 
           return (
             <li key={c.id} className="cat-card">
-              <h2 className="cat-name">{c.name}</h2>
-              <div className="multiplier">
-                <button
-                  onClick={() => changeCount(c.id, -1)}
-                  disabled={count <= 1}
-                >
-                  −
-                </button>
-                <span>{count}</span>
-                <button onClick={() => changeCount(c.id, +1)}>+</button>
-                <span className="limit">лимит: {totalLimit} мин</span>
+              <div className="cat-header">
+                <h2 className="cat-name">{c.name}</h2>
+                <div className="multiplier">
+                  <button
+                    onClick={() => changeCount(c.id, -1)}
+                    disabled={count <= 1}
+                  >
+                    −
+                  </button>
+                  <span>{count}</span>
+                  <button onClick={() => changeCount(c.id, +1)}>+</button>
+                  {/* <span className="limit">лимит: {totalLimit} мин</span> */}
+                </div>
               </div>
+
               <Timer
                 id={`cat_${c.id}`}
                 catamaranId={c.id}
@@ -139,7 +142,6 @@ export default function WorkerDashboard() {
           position: sticky;
           top: 0;
           background: #fff;
-          padding: 0.5rem 0;
           display: flex;
           justify-content: flex-end;
           gap: 0.5rem;
@@ -165,37 +167,43 @@ export default function WorkerDashboard() {
         .cat-card {
           border: 1px solid #ccc;
           border-radius: 4px;
-          padding: 0.5rem;
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
           font-size: 0.9rem;
         }
+        .cat-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+        }
         .cat-name {
           margin: 0;
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           text-align: center;
-          font-weight: 500;
+          font-weight: 700;
         }
         .multiplier {
           display: flex;
           align-items: center;
           gap: 0.25rem;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
         }
         .multiplier button {
-          width: 1.5rem;
+          width: 2rem;
           height: 1.5rem;
           border: none;
-          border-radius: 4px;
+          border-radius: 14px;
           background: #0070f3;
           color: #fff;
-          font-size: 1rem;
+          font-size: 1.2rem;
           line-height: 1;
           cursor: pointer;
         }
         .multiplier span {
-          font-size: 0.9rem;
+          font-size: 1.4rem;
+          font-weight: 700;
         }
         .limit {
           margin-left: auto;

@@ -1,9 +1,8 @@
-version: "3.9"
-
 services:
   backend:
-    image: cr.yandex/crpnlj74unl9emmbgtho/katamaran-backend
     container_name: katamaran-backend
+    build:
+      context: ./backend
     restart: always
     ports:
       - "3001:3001"
@@ -18,13 +17,17 @@ services:
       - DB_NAME=katamarans
       - JWT_SECRET=supersecretkey
       - JWT_EXPIRES_IN=3600s
+      - SMTP_HOST=smtp.mail.ru
+      - SMTP_PORT=465
+      - SMTP_USER=shest.andrey@bk.ru
+      - SMTP_PASS=9GfChZp2EeQNDUmLfPwa
 
   mysql:
     image: mysql:8
     container_name: katamaran-mysql
     restart: always
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=katamarans
@@ -37,10 +40,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   frontend:
-    build: ./frontend
     container_name: katamaran-frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
     ports:
       - "3000:3000"
     depends_on:

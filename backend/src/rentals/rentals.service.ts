@@ -7,6 +7,7 @@ import { FinishRentalDto } from './dto/finish-rental.dto';
 import { Catamaran } from '../catamarans/catamaran.entity';
 import { Worker } from '../worker/entities/worker.entity';
 import { MailerService } from '@nestjs-modules/mailer';
+import { format, toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class RentalsService {
@@ -23,6 +24,7 @@ export class RentalsService {
     catamaranId: number,
     workerId: number,
     count?: number,
+    timeZone?: string,
   ): Promise<Rental> {
     // 1) создаём и сохраняем rental
     const rental = this.repo.create({
@@ -40,17 +42,26 @@ export class RentalsService {
       relations: ['worker', 'worker.admin'],
     });
     if (cat?.notifyOnStart && cat.worker?.admin?.email) {
-      // 3) отправляем письмо через MailerService
-      await this.mailer.sendMail({
-        to: cat.worker.admin.email,
-        subject: `Начался прокат катамарана "${cat.name}"`,
-        template: 'rental-start', // файл шаблона: email-templates/rental-start.hbs
-        context: {
-          catamaranName: cat.name,
-          workerName: cat.worker.username,
-          startTime: saved.startTime.toLocaleString(),
-        },
+      const tz = timeZone || 'UTC';
+      const localTime = toZonedTime(saved.startTime, tz);
+      const formattedTime = format(localTime, 'dd.MM.yyyy HH:mm:ss', {
+        timeZone: tz,
       });
+      // 3) отправляем письмо через MailerService
+      this.mailer
+        .sendMail({
+          to: cat.worker.admin.email,
+          subject: `Начался прокат катамарана "${cat.name}"`,
+          template: 'rental-start', // файл шаблона: email-templates/rental-start.hbs
+          context: {
+            catamaranName: cat.name,
+            workerName: cat.worker.username,
+            startTime: formattedTime,
+          },
+        })
+        .catch((error) => {
+          console.error('Ошибка при отправке email о старте проката:', error);
+        });
     }
 
     return saved;

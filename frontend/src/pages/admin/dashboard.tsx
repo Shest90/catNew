@@ -29,12 +29,15 @@ const AdminDashboard: React.FC = () => {
 
   const fetchWorkers = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:3001/admin/workers", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/workers`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!res.ok) {
         const text = await res.clone().text();
         throw new Error(text || "Не удалось загрузить список рабочих.");
@@ -56,17 +59,20 @@ const AdminDashboard: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3001/auth/worker/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: workerUsername,
-          password: workerPassword,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/worker/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            username: workerUsername,
+            password: workerPassword,
+          }),
+        }
+      );
       if (!res.ok) {
         const text = await res.clone().text();
         throw new Error(text || "Ошибка создания рабочего.");
@@ -99,6 +105,12 @@ const AdminDashboard: React.FC = () => {
       setMessage("Пожалуйста, выберите рабочего для удаления.");
       return;
     }
+
+    const confirmed = window.confirm(
+      "Вы уверены, что хотите удалить рабочего?"
+    );
+    if (!confirmed) return;
+
     const token = localStorage.getItem("token");
     if (!token) {
       setMessage("Ошибка: не найден токен авторизации.");
@@ -106,7 +118,7 @@ const AdminDashboard: React.FC = () => {
     }
     try {
       const res = await fetch(
-        `http://localhost:3001/admin/workers/${selectedWorkerId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/workers/${selectedWorkerId}`,
         {
           method: "DELETE",
           headers: {

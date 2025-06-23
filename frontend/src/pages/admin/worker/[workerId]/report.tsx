@@ -19,7 +19,7 @@ export default function WorkerReportPage() {
   useEffect(() => {
     if (!workerId) return;
     const token = localStorage.getItem("token");
-    fetch("http://localhost:3001/admin/workers", {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/workers`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))

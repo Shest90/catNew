@@ -8,6 +8,11 @@ import {
 } from "../features/catamarans/catamaransApi";
 
 // Стили для модалки
+const primaryColor = "#0056b3"; // $primary-color
+// const secondaryColor = "#071369"; // $secondary-color
+const successColor = "#067905"; // $success-color
+const errorColor = "#dc3545"; // $error-color
+
 const modalOverlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0,
@@ -93,7 +98,13 @@ const Timer: React.FC<TimerProps> = ({
       startTimer(id);
       if (rentalId == null) {
         try {
-          const res = await startRental({ catamaranId, count }).unwrap();
+          const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          console.log("Отправляем timeZone:", timeZone);
+          const res = await startRental({
+            catamaranId,
+            count,
+            timeZone,
+          }).unwrap();
           setRentalId(res.id);
           localStorage.setItem(`rental_${id}`, res.id.toString());
         } catch (e) {
@@ -154,32 +165,25 @@ const Timer: React.FC<TimerProps> = ({
   return (
     <div>
       {/* Отображение времени */}
-      <div
-        style={{
-          fontSize: "1.5rem",
-          color: over ? "#ff8b94" : "#333", // если over — пастельный красный, иначе тёмный
-          marginBottom: "0.5rem",
-        }}
-      >
-        {formatTime(total)}
-      </div>
 
       {/* Кнопки управления */}
-      <div>
+      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
         {/* Start — пастельный зелёный */}
         <button
           onClick={handleStart}
           disabled={isRunning}
           style={{
-            background: "#a8e6cf",
-            color: "#333",
-            padding: "0.5rem 1rem",
-            border: "1px solid #a8e6cf",
-            borderRadius: 4,
+            fontSize: "1rem",
+            backgroundColor: isRunning ? primaryColor : successColor,
+            color: "#fff",
+            border: "none",
+            padding: "0.6rem 1rem",
+            borderRadius: "20px",
             cursor: isRunning ? "not-allowed" : "pointer",
+            opacity: isRunning ? 0.4 : 1,
           }}
         >
-          Start
+          Старт
         </button>
 
         {/* Stop / Reset — пастельный жёлтый или красный */}
@@ -187,35 +191,47 @@ const Timer: React.FC<TimerProps> = ({
           onClick={handleStopReset}
           disabled={total === 0}
           style={{
-            marginLeft: 8,
-            background: isRunning ? "#ffd3b6" : "#ff8b94",
-            color: "#333",
-            padding: "0.5rem 1rem",
-            border: `1px solid ${isRunning ? "#ffd3b6" : "#ff8b94"}`,
-            borderRadius: 4,
+            fontSize: "1rem",
+            backgroundColor: total > 0 ? errorColor : primaryColor,
+            color: "#fff",
+            border: "none",
+            borderRadius: "20px",
             cursor: total === 0 ? "not-allowed" : "pointer",
+            opacity: total === 0 ? 0.4 : 1,
           }}
         >
-          {isRunning ? "Stop" : "Reset"}
-        </button>
-
-        {/* Comment — пастельный лаванда (или другой пастельный тон) */}
-        <button
-          onClick={openCommentModal}
-          disabled={total === 0}
-          style={{
-            marginLeft: 8,
-            background: "#dcedc1",
-            color: "#333",
-            padding: "0.5rem 1rem",
-            border: "1px solid #dcedc1",
-            borderRadius: 4,
-            cursor: total === 0 ? "not-allowed" : "pointer",
-          }}
-        >
-          Comment
+          {isRunning ? "Стоп" : "Сброс"}
         </button>
       </div>
+      <div
+        style={{
+          fontSize: "1.8rem",
+          fontWeight: "700",
+          color: over ? errorColor : successColor, // если over — пастельный красный, иначе тёмный
+          backgroundColor: over ? "#f3b7bd" : "#ffffff",
+          borderRadius: "20px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        }}
+      >
+        {formatTime(total)}
+      </div>
+      {/* Comment — пастельный лаванда (или другой пастельный тон) */}
+      <button
+        onClick={openCommentModal}
+        disabled={total === 0}
+        style={{
+          fontSize: "1rem",
+          backgroundColor: primaryColor,
+          color: "#fff",
+          border: "none",
+          padding: "0.6rem 1rem",
+          borderRadius: "20px",
+          cursor: total === 0 ? "not-allowed" : "pointer",
+          opacity: total === 0 ? 0.4 : 1,
+        }}
+      >
+        Возврат катамарана
+      </button>
 
       {/* Модальное окно комментария */}
       {showModal && (
@@ -226,31 +242,39 @@ const Timer: React.FC<TimerProps> = ({
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               rows={4}
-              style={{ width: "100%", marginBottom: "0.5rem" }}
+              style={{
+                width: "100%",
+                marginBottom: "0.5rem",
+                fontSize: "1.3rem",
+              }}
             />
             <div style={{ textAlign: "right" }}>
               <button
                 onClick={handleCommentSubmit}
                 disabled={!commentText.trim()}
                 style={{
-                  background: "#a8e6cf",
+                  background: "#0070f3",
                   color: "#333",
                   padding: "0.5rem 1rem",
                   border: "1px solid #a8e6cf",
                   borderRadius: 4,
                   marginRight: 8,
+                  fontSize: "1rem",
+                  fontWeight: "700",
                 }}
               >
-                Отправить и Reset
+                Отправить и Сброс
               </button>
               <button
                 onClick={() => setShowModal(false)}
                 style={{
-                  background: "#ffd3b6",
+                  background: "#e4620c",
                   color: "#333",
                   padding: "0.5rem 1rem",
                   border: "1px solid #ffd3b6",
                   borderRadius: 4,
+                  fontSize: "1rem",
+                  fontWeight: "700",
                 }}
               >
                 Отмена

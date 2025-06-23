@@ -6,7 +6,7 @@ import type { Rental } from "../../types/rental";
 export const catamaransApi = createApi({
   reducerPath: "catamaransApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3001/",
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -78,12 +78,12 @@ export const catamaransApi = createApi({
     // 4) Старт проката
     startRental: builder.mutation<
       Rental,
-      { catamaranId: number; count: number }
+      { catamaranId: number; count: number; timeZone?: string }
     >({
-      query: ({ catamaranId, count }) => ({
+      query: ({ catamaranId, count, timeZone }) => ({
         url: `worker/catamarans/${catamaranId}/rentals`,
         method: "POST",
-        body: { count },
+        body: { count, timeZone },
       }),
       invalidatesTags: (_res, _err, { catamaranId }) => [
         { type: "Rental", id: catamaranId },

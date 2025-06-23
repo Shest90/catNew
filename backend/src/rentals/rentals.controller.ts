@@ -22,15 +22,17 @@ export class RentalsController {
   @Post()
   start(
     @Param('catamaranId') catamaranId: string,
-    @Body() dto: CreateRentalDto,
+    @Body() dto: CreateRentalDto & { timeZone?: string },
     @Req() req,
   ) {
+    console.log('Контроллер получил timeZone:', dto.timeZone);
     const workerId = req.user.id as number;
     // Передаём все три аргумента явно
     return this.svc.startRental(
       +catamaranId,
       workerId,
       dto.count, // может быть undefined → сервис подпоставит 1
+      dto.timeZone,
     );
   }
 

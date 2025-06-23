@@ -19,7 +19,7 @@ export interface ReportResponse {
 export const reportsApi = createApi({
   reducerPath: "reportsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3001/",
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) headers.set("Authorization", `Bearer ${token}`);

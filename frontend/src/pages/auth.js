@@ -20,14 +20,17 @@ export default function Auth() {
     e.preventDefault();
     setMessage("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: loginUsername,
-          password: loginPassword,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: loginUsername,
+            password: loginPassword,
+          }),
+        }
+      );
       const data = await res.json();
       if (data.token) {
         localStorage.setItem("token", data.token);
@@ -47,7 +50,7 @@ export default function Auth() {
     setMessage("");
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/admin/register`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin/register`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
