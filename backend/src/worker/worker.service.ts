@@ -24,6 +24,11 @@ export class WorkerService {
   }
 
   findOne(id: number) {
+    console.log('[worker.service] received id:', id);
+
+    if (!Number.isFinite(id)) {
+      throw new Error(`Неверный ID рабочего: ${id}`);
+    }
     return this.workerRepository.findOne({ where: { id } });
   }
 

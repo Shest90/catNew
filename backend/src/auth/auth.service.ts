@@ -65,13 +65,20 @@ export class AuthService {
     // Проверяем, является ли пользователь администратором
     const admin = await this.adminRepository.findOne({ where: { username } });
     if (admin && (await bcrypt.compare(password, admin.password))) {
-      const token = this.jwtService.sign({ id: admin.id, role: 'admin' });
+      const token = this.jwtService.sign({ sub: admin.id, role: 'admin' });
       return { token, role: 'admin' };
     }
     // Если администратор не найден, проверяем рабочего
-    const worker = await this.workerRepository.findOne({ where: { username } });
+    const worker = await this.workerRepository.findOne({
+      where: { username },
+      relations: ['admin'],
+    });
     if (worker && (await bcrypt.compare(password, worker.password))) {
-      const token = this.jwtService.sign({ id: worker.id, role: 'worker' });
+      const token = this.jwtService.sign({
+        sub: worker.id,
+        role: 'worker',
+        adminId: worker.admin.id,
+      });
       return { token, role: 'worker' };
     }
     throw new UnauthorizedException('Неверные учетные данные');

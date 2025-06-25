@@ -42,4 +42,11 @@ export class SettingsService {
     s.weekendLimit = dto.weekendLimit;
     return this.repo.save(s);
   }
+  async getForWorker(adminId: number): Promise<Setting> {
+    const s = await this.repo.findOne({
+      where: { admin: { id: adminId } },
+    });
+    if (!s) throw new NotFoundException('Settings not found for admin');
+    return s;
+  }
 }

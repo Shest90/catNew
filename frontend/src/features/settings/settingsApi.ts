@@ -26,7 +26,15 @@ export const settingsApi = createApi({
       }),
       invalidatesTags: ["Settings"],
     }),
+    getWorkerSettings: builder.query<Setting, void>({
+      query: () => "worker/settings",
+      providesTags: ["Settings"],
+    }),
   }),
 });
 
-export const { useGetSettingsQuery, useUpdateSettingsMutation } = settingsApi;
+export const {
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
+  useGetWorkerSettingsQuery,
+} = settingsApi;

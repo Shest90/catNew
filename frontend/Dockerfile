@@ -31,4 +31,4 @@ COPY --from=builder /app/package.json ./package.json
 
 ENV HOST=0.0.0.0
 EXPOSE 3000
-CMD ["npx", "next", "start", "-H", "0.0.0.0"]
+CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]

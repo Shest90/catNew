@@ -1,7 +1,8 @@
 // frontend/src/pages/worker/dashboard.tsx
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useGetSettingsQuery } from "../../features/settings/settingsApi";
+import { useGetWorkerSettingsQuery } from "../../features/settings/settingsApi";
+// import { useGetSettingsQuery } from "../../features/settings/settingsApi";
 import { useGetCatamaransForWorkerQuery } from "../../features/catamarans/catamaransApi";
 import Timer from "../../components/Timer";
 
@@ -18,7 +19,8 @@ export default function WorkerDashboard() {
   }, [router]);
 
   // 2) Загружаем настройки и катамараны
-  const { data: settings, isLoading: loadingSettings } = useGetSettingsQuery();
+  const { data: settings, isLoading: loadingSettings } =
+    useGetWorkerSettingsQuery();
   const { data: catamarans = [], isLoading: loadingCats } =
     useGetCatamaransForWorkerQuery();
 
