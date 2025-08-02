@@ -57,6 +57,7 @@ const Timer: React.FC<TimerProps> = ({
 
   const [showModal, setShowModal] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [rentalId, setRentalId] = useState<number | null>(null);
 
@@ -148,6 +149,8 @@ const Timer: React.FC<TimerProps> = ({
   // Отправить комментарий + сброс
   const handleCommentSubmit = async () => {
     if (!commentText.trim() || rentalId == null) return;
+
+    setIsSubmitting(true);
     try {
       await createComment({
         catamaranId,
@@ -159,6 +162,8 @@ const Timer: React.FC<TimerProps> = ({
       setCommentText("");
     } catch (err) {
       console.error("Ошибка отправки комментария:", err);
+    } finally {
+      setIsSubmitting(false); // разблокируем после завершения
     }
   };
 
@@ -251,7 +256,7 @@ const Timer: React.FC<TimerProps> = ({
             <div style={{ textAlign: "right" }}>
               <button
                 onClick={handleCommentSubmit}
-                disabled={!commentText.trim()}
+                disabled={!commentText.trim() || isSubmitting}
                 style={{
                   background: "#0070f3",
                   color: "#333",
@@ -261,9 +266,11 @@ const Timer: React.FC<TimerProps> = ({
                   marginRight: 8,
                   fontSize: "1rem",
                   fontWeight: "700",
+                  opacity: isSubmitting ? 0.6 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
                 }}
               >
-                Отправить и Сброс
+                {isSubmitting ? "Отправка..." : "Отправить и Сброс"}
               </button>
               <button
                 onClick={() => setShowModal(false)}
